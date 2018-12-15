@@ -1,5 +1,9 @@
 # GraphLab PowerGraph v2.2
 
+## UPDATE
+add dependent file to dist folder
+change cmakelists.txt to download file from dist folder
+then the project can be  compiled offline
 ## UPDATE: For a signficant evolution of this codebase, see GraphLab Create which is available for download at [turi.com](https://turi.com)
 
 ## History
