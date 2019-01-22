@@ -1,6 +1,13 @@
 # GraphLab PowerGraph v2.2
 
 ## UPDATE
+compile mpi from dist, insulate user from the system mpi
+add correponding changes to the cmakelists file
+
+change configure to use local cmake.tar.gz in case downloading from network is not supported and 
+the cmake verison of system is lower than cmake_minimum_required.
+cp dist/cmake.tar.gz to deps when configure.
+
 add dependent file to dist folder
 change cmakelists.txt to download file from dist folder
 then the project can be  compiled offline
