@@ -213,6 +213,7 @@ set(Boost_LIBRARIES
   ${BOOST_LIBS_DIR}/libboost_context.a
   ${BOOST_LIBS_DIR}/libboost_date_time.a)
 add_dependencies(boost libbz2)
+add_dependencies(boost zlib)
 message(STATUS "Boost libs: " ${Boost_LIBRARIES})
 # add_definitions(-DBOOST_DATE_TIME_POSIX_TIME_STD_CONFIG)
 # add_definitions(-DBOOST_ALL_DYN_LINK)
@@ -339,7 +340,13 @@ endmacro(requires_opencv)
 #   add_definitions(-DHAS_ZLIB)
 #   link_libraries(z)
 # endif()
-
+ExternalProject_Add(zlib
+  PREFIX ${GraphLab_SOURCE_DIR}/deps/zlib
+  URL ${GraphLab_SOURCE_DIR}/dist/zlib-1.2.7.tar.gz
+  BUILD_IN_SOURCE 1
+  BUILD_COMMAND make install PREFIX=<INSTALL_DIR>
+  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR>
+  INSTALL_DIR ${GraphLab_SOURCE_DIR}/deps/local)
 # libevent ====================================================================
 # LibEvent is used in the RPC layer to manage the interaction between the
 # TCP stack and the event handler threads
@@ -455,28 +462,24 @@ endif()
 # MPI =========================================================================
 # MPI is currently used to establish communication between rpc nodes
 #sgr this name is confusing. i like WITH_MPI better. likewise for NO_OPENMP
-if(NO_MPI)
-  message(STATUS "MPI disabled as a configure option.")
-else()
-  #find_package(MPICH2)
-  find_package(MPI) 
-  if(MPI_FOUND)
-    message(STATUS "MPI Found: " ${MPI_LIBRARY} ${MPI_EXTRA_LIBRARY})
-    add_definitions(-DHAS_MPI)
-    include_directories(${MPI_INCLUDE_PATH})
-  else(MPI_FOUND)
-    message(STATUS "MPI Not Found! Distributed Executables will not be compiled")
-    set(MPI_LIBRARY "")
-    set(MPI_EXTRA_LIBRARY "")
-    # ExternalProject_Add(openmpi
-    #   PREFIX ${GraphLab_SOURCE_DIR}/deps/openmpi
-    #   URL http://www.open-mpi.org/software/ompi/v1.4/downloads/openmpi-1.4.5.tar.gz
-    #   CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR>
-    #   INSTALL_DIR ${GraphLab_SOURCE_DIR}/deps/local)
-  endif(MPI_FOUND)
-endif()
+set(MPI_FOUND True)
+ExternalProject_Add(openmpi
+  PREFIX ${GraphLab_SOURCE_DIR}/deps/openmpi
+  URL ${GraphLab_SOURCE_DIR}/dist/openmpi-1.4.5.tar.gz
+  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR> --disable-mpi-f77
+  INSTALL_DIR ${GraphLab_SOURCE_DIR}/deps/local)
 
-
+set(MPI_LIBRARY
+${GraphLab_SOURCE_DIR}/deps/local/lib/libmpi.so
+)
+set(MPI_EXTRA_LIBRARY
+${GraphLab_SOURCE_DIR}/deps/local/lib/libmpi_cxx.so
+)
+set(MPI_INCLUDE_PATH
+${GraphLab_SOURCE_DIR}/deps/local/include
+)
+add_definitions(-DHAS_MPI)
+include_directories(${MPI_INCLUDE_PATH})
 
 #ExternalProject_Add(qthreads
 #                    PREFIX ${GraphLab_SOURCE_DIR}/deps/qthreads
@@ -497,7 +500,7 @@ macro(requires_core_deps NAME)
     z
     event event_pthreads
     zookeeper_mt)
-  add_dependencies(${NAME} boost libevent zookeeper)
+  add_dependencies(${NAME} openmpi boost libevent zookeeper)
   if(MPI_FOUND)
     target_link_libraries(${NAME} ${MPI_LIBRARY} ${MPI_EXTRA_LIBRARY})
   endif(MPI_FOUND)

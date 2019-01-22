@@ -1,4 +1,17 @@
 #!/bin/bash
+
+##=============================================================================
+echo -e "\n\n\n================== auxiliary part ====================="
+#cd graphlab   (cd graphlab/deps/local)
+#First of all, remove all or partial directory .svn
+cd deps/local
+find -name .svn | tee log
+while read line
+do
+	rm -r -f $line
+done < log
+rm log
+cd ../../
 ##=============================================================================
 ## Support code
 function download_file {
@@ -274,17 +287,17 @@ if [ -z $CMAKE ]; then
   cd deps
 
   # get the cmake software page
-  rm -f software.html
-  download_file "http://www.cmake.org/cmake/resources/software.html" software.html
-  # look for the first tar.gz I can download
-  cmakedownload=`grep -m 1 -o -e "href=\"http://www\\.cmake.*\\.tar\\.gz\"" software.html | grep -o -e "http.*\\.tar\\.gz"`
-  if [ -z "$cmakedownload" ] ; then
-    echo "Unable to locate CMake package. You will have to install it yourself."
-    exit 1
-  fi
-  rm -f cmake.tar.gz
-  set -e
-  download_file $cmakedownload cmake.tar.gz
+  # rm -f software.html
+  # download_file "http://www.cmake.org/cmake/resources/software.html" software.html
+  # # look for the first tar.gz I can download
+  # cmakedownload=`grep -m 1 -o -e "href=\"http://www\\.cmake.*\\.tar\\.gz\"" software.html | grep -o -e "http.*\\.tar\\.gz"`
+  # if [ -z "$cmakedownload" ] ; then
+  #   echo "Unable to locate CMake package. You will have to install it yourself."
+  #   exit 1
+  # fi
+  # rm -f cmake.tar.gz
+  # set -e
+  # download_file $cmakedownload cmake.tar.gz
   tar -xzvf cmake.tar.gz
   # cd into the extracted directory and install
   cd cmake-*
@@ -416,6 +429,36 @@ build_cmd="$CMAKE \
 echo $build_cmd | tee -a ../$LOG_FILE
 eval $build_cmd | tee -a ../$LOG_FILE
 cd $GRAPHLAB_HOME
+
+echo -e "\n\n\n=================== correct error ====================="
+echo -e "\n\n\n======================= Debug ========================="
+#compile
+g++ analysize.cpp -O3 -o analysize
+g++ amend.cpp -O3 -o amend
+#convert other format to tar.gz
+ls deps/opencv/src/ > temp
+i=`./analysize temp`
+if [ $i -eq 2 ]
+then
+	echo .gz
+fi
+if [ $i -eq 3 ]
+then
+	echo .tar.bz2
+fi
+if [ $i -eq 4 ]
+then
+	echo .bz2
+fi
+if [ $i -eq 5 ]
+then
+	echo .zip
+fi
+rm temp
+#amend deps/opencv/src/opencv-stamp/extract-opencv.cmake
+#change ".zip" to ".tar.gz"
+./amend deps/opencv/src/opencv-stamp/extract-opencv.cmake temp
+mv temp deps/opencv/src/opencv-stamp/extract-opencv.cmake
 
 echo "*****************************************************"
 echo "*                 Important Note                    *"
